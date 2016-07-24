@@ -2,9 +2,11 @@ package optimize
 
 import breeze.linalg._
 import breeze.numerics._
+import java.io.File
 
 object RunOptimization extends App {
-  val x = DenseMatrix.rand(2, 3)
-  val y = DenseMatrix.rand(3, 2)
-  println(y * x)
+  val path = "/Users/fernandofreiredemedeiros/MSc/MAC5796/terminal/optm_finance/src/main/scala/optimize/prices.csv"
+  val file = new File(path)
+  val myEstimator = new Estimator(file)
+  println(myEstimator.lambda)
 }
