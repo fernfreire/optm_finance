@@ -2,15 +2,14 @@ package optimize
 
 import breeze.linalg._
 import breeze.stats._
+import breeze.math._
+import breeze.numerics._
 import java.io.File
 
-class Estimator(inputFile: File) {
-  def theta: Double = sum(this.prices)
-  def avg: Double = this.averagePrice
-  def vol: Double = this.delta
-  def rho: Double = this.y
-  def foo: Double = this.w
-  def bar: Double = this.z
+class Estimator(inputFile: File, interval: Double) {
+  def theta: Double = -log(1 - this.y) / this.interval
+  def avg: Double = this.w / this.y
+  def vol: Double = sqrt(2 * this.theta * this.z / (this.y * (2 - this.y)))
 
   //TODO: fix this csvread to convert to column vector
   private lazy val prices = csvread(this.inputFile)(::, 0)
