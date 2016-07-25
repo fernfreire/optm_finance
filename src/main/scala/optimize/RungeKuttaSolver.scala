@@ -3,6 +3,6 @@ package optimize
 import breeze.linalg._
 import breeze.numerics._
 
-class RungeKutta {
-
+class RungeKuttaSolver[T <: ODE](ode: T) {
+  def foo = "foo"
 }
