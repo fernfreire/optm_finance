@@ -12,5 +12,6 @@ object RunOptimization extends App {
   val file = new File(path)
   val myEstimator = new Estimator(file, 1.0 / 252)
   val uoODE = new OrnsteinUhlenbeckODE(myEstimator.theta, myEstimator.avg, myEstimator.vol, 12.15)
-  val rkSolver = new RungeKuttaSolver(uoODE)
+  val rkSolver = new RungeKuttaSolver(uoODE, 1.2, DenseVector.ones[Double](2), 4.0)
+  println(rkSolver.isTargetReachable)
 }
