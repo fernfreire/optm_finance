@@ -12,6 +12,11 @@ object RunOptimization extends App {
   val file = new File(path)
   val myEstimator = new Estimator(file, 1.0 / 252)
   val uoODE = new OrnsteinUhlenbeckODE(myEstimator.theta, myEstimator.avg, myEstimator.vol, 12.15)
-  val rkSolver = new RungeKuttaSolver(uoODE, 1.2, DenseVector.ones[Double](2), 4.0)
-  println(rkSolver.isTargetReachable)
+  val rkSolver = new RungeKuttaSolver[OrnsteinUhlenbeckODE](uoODE, 20, DenseVector(1.0), 0e0, 1e0)
+  // val rkSolver = new RungeKuttaSolver[OrnsteinUhlenbeckODE](uoODE, 20, DenseVector(2.0, 3.0), 0e0, 1e0)
+  val solved = rkSolver.solve
+  solved.foreach(println(_))
+  // println(solved(0.0))
+  // println(solved(0.5))
+  // println(solved(1.0))
 }
