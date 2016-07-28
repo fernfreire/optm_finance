@@ -3,6 +3,7 @@ package optimize
 import breeze.linalg._
 import breeze.numerics._
 import breeze.math._
+import scala.annotation.tailrec
 
 class RungeKuttaSolver[T <: ODE](ode: T, N: Int, yInitial: DenseVector[Double], xInitial: Double, xFinal: Double) {
   private val h = (xFinal - xInitial) / N
@@ -27,14 +28,32 @@ class RungeKuttaSolver[T <: ODE](ode: T, N: Int, yInitial: DenseVector[Double], 
     y + ((k1Value + (2.0 :* k2Value) + (2.0 :* k3Value) + k4Value) :/ 6.0)
   }
 
-  def solve: Map[Double, DenseVector[Double]] = {
-    def solver(currentY: DenseVector[Double], currentX: Double, xFinal: Double, h: Double, currentStep: Int, steps: Int, map: Map[Double, DenseVector[Double]]): Map[Double, DenseVector[Double]] = {
+  private def solvePVI: Map[Double, DenseVector[Double]] = {
+    @tailrec def solver(currentY: DenseVector[Double],
+      currentX: Double,
+      xFinal: Double,
+      h: Double,
+      currentStep: Int,
+      steps: Int,
+      map: Map[Double, DenseVector[Double]]): Map[Double, DenseVector[Double]] = {
+
       if (currentStep > steps)
         map
       else
         solver(this.nextY(currentY, currentX, h, ode), currentX + h, xFinal, h, currentStep + 1, steps, Map(currentX -> currentY) ++ map)
     }
+
     solver(this.yInitial, this.xInitial, this.xFinal, this.h, 0, this.N, Map(xInitial -> yInitial))
   }
+
+  lazy val solution = this.solvePVI
+  lazy val xs = solution.keys.toList
+
+  private def getX(x: Double, keys: List[Double]) = keys match {
+    case Nil => throw new Error("There should be at least one point in the solution!")
+    case list => list.minBy(v => math.abs(v - x))
+  }
+
+  def ys(x: Double): DenseVector[Double] = solution(getX(x, this.xs))
 
 }
