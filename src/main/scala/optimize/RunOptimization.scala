@@ -28,8 +28,8 @@ object RunOptimization extends App {
   def thisH(x: DenseVector[Double]): DenseMatrix[Double] = {
     val x1 = x(0)
     val x2 = x(1)
-    (pow(1 / (1 - x1 - x2), 2)) :* DenseMatrix((1.0, 1.0), (1.0, 1.0)) + (pow(1 / (x1), 2)) :* DenseMatrix((1.0, 0.0), (1.0, 0.0))
+    (pow(1 / (1 - x1 - x2), 2)) :* DenseMatrix((1.0, 1.0), (1.0, 1.0)) + (pow(1 / (x1), 2)) :* DenseMatrix((1.0, 0.0), (0.0, 1.0))
   }
-  val x = Newton.findMin(grad, thisH, DenseVector(0.2, 0.2), 1e-10)
+  val x = Newton.findMin(grad, thisH, DenseVector(0.3333, 0.3333), 1e-16)
   println(x)
 }
