@@ -3,7 +3,7 @@ package optimize
 import breeze.linalg._
 import breeze.numerics._
 
-object Newton {
+object NewtonMethod {
   def findMin(gradF: DenseVector[Double] => DenseVector[Double], H: DenseVector[Double] => DenseMatrix[Double], initialX: DenseVector[Double], eps: Double): DenseVector[Double] = {
     def loop(gradF: DenseVector[Double] => DenseVector[Double], H: DenseVector[Double] => DenseMatrix[Double], currentX: DenseVector[Double], eps: Double, d: DenseVector[Double]): DenseVector[Double] = {
       println(s"x: ${currentX}, d: ${d}")
