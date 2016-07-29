@@ -5,7 +5,7 @@ import breeze.numerics._
 import breeze.math._
 import scala.annotation.tailrec
 
-class RungeKuttaSolver[T <: ODE](ode: T) {
+class RungeKuttaSolver[T <: ODE](ode: T) extends Interpolation {
   private def k1(y: DenseVector[Double], x: Double, h: Double, ode: T): DenseVector[Double] =
     h :* ode.fyx(y, x)
 
@@ -26,7 +26,7 @@ class RungeKuttaSolver[T <: ODE](ode: T) {
     y + ((k1Value + (2.0 :* k2Value) + (2.0 :* k3Value) + k4Value) :/ 6.0)
   }
 
-  def solvePVI(initialX: Double,
+  private def solveOneSideIVP(initialX: Double,
     finalX: Double,
     initialY: DenseVector[Double],
     N: Int): Map[Double, DenseVector[Double]] = {
@@ -48,21 +48,21 @@ class RungeKuttaSolver[T <: ODE](ode: T) {
       solver(initialY, initialX, finalX, h, 0, N, Map(initialX -> initialY))
   }
 
-  private def getX(x: Double, keys: List[Double]) = keys match {
-    case Nil => throw new Error("There should be at least one point in the solution!")
-    case list => list.minBy(v => math.abs(v - x))
+  def solveIVP(initialX: Double,
+    initialY: DenseVector[Double],
+    lowerX: Double,
+    upperX: Double,
+    lowerN: Int,
+    upperN: Int): Map[Double, DenseVector[Double]] = {
+      val lowerMap = solveOneSideIVP(initialX, lowerX, initialY, lowerN)
+      val upperMap = solveOneSideIVP(initialX, upperX, initialY, upperN)
+      lowerMap ++ upperMap
   }
 
-  def ys(x: Double, solution: Map[Double, DenseVector[Double]]): DenseVector[Double] = solution(getX(x, solution.keys.toList))
-  def yNs(x: Double, solution: Map[Double, DenseVector[Double]], N: Int): Double = {
-    val vec = ys(x, solution)
-    val dim = vec.length
-    if(N < dim)
-      vec(N)
-    else if(N == dim)
-      this.ode.fyx(vec, x)(-1)
-    else
-      throw new Error("Higher order derivatives not implemented...")
-  }
+  override def ys(x: Double, solution: Map[Double, DenseVector[Double]]): DenseVector[Double] =
+    super.ys(x, solution)
+
+  def yNs(x: Double, solution: Map[Double, DenseVector[Double]], N: Int): Double =
+    super.yNs(x, solution, N, this.ode)
 
 }

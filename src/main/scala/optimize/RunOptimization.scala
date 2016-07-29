@@ -7,13 +7,13 @@ import java.io.File
 object RunOptimization extends App {
   val paths = Map(1 -> "/Users/fernandofreiredemedeiros/MSc/MAC5796/terminal/optm_finance/src/main/scala/optimize/prices.csv",
     2 -> "c:/Users/fernanda/desktop/fernando/MAC5796/project/optm_finance/src/main/scala/optimize/prices.csv")
-  val choose = 1
+  val choose = 2
   val path = paths(choose)
   val file = new File(path)
   val myEstimator = new OrnsteinUhlenbeckParametersEstimator(file, 1.0 / 252)
   val uoODE = new OrnsteinUhlenbeckODE(myEstimator.theta, myEstimator.avg, myEstimator.vol, 12.15)
   val rkSolver = new RungeKuttaSolver[OrnsteinUhlenbeckODE](uoODE)
-  val pviSolution = rkSolver.solvePVI(0.0, 10.0, DenseVector(2.0, 3.0), 1000)
+  val pviSolution = rkSolver.solveIVP(0.0, DenseVector(2.0, 3.0), -10.0, 10.0, 1000, 1000)
   // val pviSolution = rkSolver.solvePVI(0.0, 10.0, DenseVector(1.0), 100)
   val y1 = rkSolver.ys(1.0, pviSolution)
   println(y1)
