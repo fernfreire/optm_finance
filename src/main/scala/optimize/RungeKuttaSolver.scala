@@ -30,22 +30,24 @@ class RungeKuttaSolver[T <: ODE](ode: T) extends Interpolation {
     finalX: Double,
     initialY: DenseVector[Double],
     N: Int): Map[Double, DenseVector[Double]] = {
-      val h = (finalX - initialX) / N
-      @tailrec def solver(currentY: DenseVector[Double],
-        currentX: Double,
-        finalX: Double,
-        h: Double,
-        currentStep: Int,
-        steps: Int,
-        map: Map[Double, DenseVector[Double]]): Map[Double, DenseVector[Double]] = {
+      if(N > 0) {
+        val h = (finalX - initialX) / N
+        @tailrec def solver(currentY: DenseVector[Double],
+          currentX: Double,
+          h: Double,
+          currentStep: Int,
+          steps: Int,
+          map: Map[Double, DenseVector[Double]]): Map[Double, DenseVector[Double]] = {
 
-        if (currentStep > steps)
-          map
-        else
-          solver(this.nextY(currentY, currentX, h, ode), currentX + h, finalX, h, currentStep + 1, steps, Map(currentX -> currentY) ++ map)
-      }
+          if (currentStep > steps)
+            map
+          else
+            solver(this.nextY(currentY, currentX, h, ode), currentX + h, h, currentStep + 1, steps, Map(currentX -> currentY) ++ map)
+        }
 
-      solver(initialY, initialX, finalX, h, 0, N, Map(initialX -> initialY))
+        solver(initialY, initialX, h, 0, N, Map(initialX -> initialY))
+      } else
+        Map[Double, DenseVector[Double]]()
   }
 
   def solveIVP(initialX: Double,
@@ -58,9 +60,6 @@ class RungeKuttaSolver[T <: ODE](ode: T) extends Interpolation {
       val upperMap = solveOneSideIVP(initialX, upperX, initialY, upperN)
       lowerMap ++ upperMap
   }
-
-  override def ys(x: Double, solution: Map[Double, DenseVector[Double]]): DenseVector[Double] =
-    super.ys(x, solution)
 
   def yNs(x: Double, solution: Map[Double, DenseVector[Double]], N: Int): Double =
     super.yNs(x, solution, N, this.ode)
