@@ -10,10 +10,12 @@ import scala.annotation.tailrec
 // in order to apply the same numbers of terms on BVP.
 // Otherwise the system might have an infinity number of solutions
 class BVPSolver[T <: ODE](rkSolver: RungeKuttaSolver[T]) extends Interpolation {
+  private def dv2M(v: DenseVector[DenseVector[Double]]): DenseMatrix[Double] =
+    DenseMatrix(v.valuesIterator.map(_.valuesIterator.toArray).toSeq: _*)
+
   private def getLinearSystemCoefs(x: DenseVector[Double],
     liSolutions: DenseVector[Map[Double, DenseVector[Double]]]) = {
-      val v = x.map(xi => liSolutions.map(r => super.ys(xi, r)(0)))
-      DenseMatrix(v.valuesIterator.map(_.valuesIterator.toArray).toSeq: _*)
+      this.dv2M(x.map(xi => liSolutions.map(r => super.ys(xi, r)(0))))
   }
 
   private def mult(coefs: DenseVector[Double], liSolutions: DenseVector[DenseVector[Double]]) = {
@@ -46,25 +48,46 @@ class BVPSolver[T <: ODE](rkSolver: RungeKuttaSolver[T]) extends Interpolation {
       lambda(keys, liSolutions, coefs, Map())
   }
 
-  def solveBVP(x: DenseVector[Double], y: DenseVector[Double], h: Double): Map[Double, DenseVector[Double]] = {
-    def steps(h: Double, initialX: Double, finalX: Double): Int = ceil(abs(finalX - initialX) / h).toInt
+  private def solveBVPAndGetCoefs(x: DenseVector[Double],
+    y: DenseVector[Double],
+    lowerX: Double,
+    upperX: Double,
+    h: Double): (Map[Double, DenseVector[Double]], DenseVector[Double]) = {
+      def steps(h: Double, initialX: Double, finalX: Double): Int = ceil(abs(finalX - initialX) / h).toInt
 
-    if(x.length != y.length) throw new Error("x and y should have the same size!")
-    val (lowerX, upperX) = (min(x), max(x))
-    val meanX = mean(x)
-    val N = steps(h, lowerX, upperX)
-    val dim = x.length
-    val initMatrix = meanX :* (DenseMatrix.eye[Double](dim) + DenseMatrix.ones[Double](dim, dim))
-    val mat = DenseMatrix.horzcat(x.toDenseMatrix.t, initMatrix)
-    val liSolutions = mat(*, ::).map(row => this.rkSolver.solveIVP(row(0),
-      row.slice(1, dim + 1),
-      lowerX,
-      upperX,
-      steps(h, row(0), lowerX),
-      steps(h, row(0), upperX)))
-    val A = this.getLinearSystemCoefs(x, liSolutions)
-    val coefs = (inv(A)) * y
-    val keys = liSolutions.map(_.keys).reduce(_++_).toList
-    createMap(keys, liSolutions, coefs)
+      if(x.length != y.length) throw new Error("x and y should have the same size!")
+      val meanX = mean(x)
+      val N = steps(h, lowerX, upperX)
+      val dim = x.length
+      val initMatrix = meanX :* (DenseMatrix.eye[Double](dim) + DenseMatrix.ones[Double](dim, dim))
+      val mat = DenseMatrix.horzcat(x.toDenseMatrix.t, initMatrix)
+      val liSolutions = mat(*, ::).map(row => this.rkSolver.solveIVP(row(0),
+        row.slice(1, dim + 1),
+        lowerX,
+        upperX,
+        steps(h, row(0), lowerX),
+        steps(h, row(0), upperX)))
+      val A = this.getLinearSystemCoefs(x, liSolutions)
+      val coefs = (inv(A)) * y
+      val keys = liSolutions.map(_.keys).reduce(_++_).toList
+      (createMap(keys, liSolutions, coefs), coefs)
   }
+
+  def solveBVP(x: DenseVector[Double],
+    y: DenseVector[Double],
+    lowerX: Double,
+    upperX: Double,
+    h: Double): Map[Double, DenseVector[Double]] = {
+      val (s, c) = solveBVPAndGetCoefs(x, y, lowerX, upperX, h)
+      s
+    }
+
+  def getCoefs(x: DenseVector[Double],
+    y: DenseVector[Double],
+    lowerX: Double,
+    upperX: Double,
+    h: Double): DenseVector[Double] = {
+      val (s, c) = solveBVPAndGetCoefs(x, y, lowerX, upperX, h)
+      c
+    }
 }
