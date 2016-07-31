@@ -38,13 +38,12 @@ class RungeKuttaSolver[T <: ODE](ode: T) extends Interpolation {
           currentStep: Int,
           steps: Int,
           map: Map[Double, DenseVector[Double]]): Map[Double, DenseVector[Double]] = {
-
-          if (currentStep > steps)
-            map
-          else
-            solver(this.nextY(currentY, currentX, h, ode), currentX + h, h, currentStep + 1, steps, Map(currentX -> currentY) ++ map)
+            if(((currentStep + 1) % 2000) == 0) println(currentStep)
+            if (currentStep > steps)
+              map
+            else
+              solver(this.nextY(currentY, currentX, h, ode), currentX + h, h, currentStep + 1, steps, Map(currentX -> currentY) ++ map)
         }
-        println("RK solved!")
         solver(initialY, initialX, h, 0, N, Map(initialX -> initialY))
       } else
         Map[Double, DenseVector[Double]]()
@@ -57,7 +56,9 @@ class RungeKuttaSolver[T <: ODE](ode: T) extends Interpolation {
     lowerN: Int,
     upperN: Int): Map[Double, DenseVector[Double]] = {
       val lowerMap = solveOneSideIVP(initialX, lowerX, initialY, lowerN)
+      println("Lower side solved")
       val upperMap = solveOneSideIVP(initialX, upperX, initialY, upperN)
+      println("Upper side solved")
       lowerMap ++ upperMap
   }
 

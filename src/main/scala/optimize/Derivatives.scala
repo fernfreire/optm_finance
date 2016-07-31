@@ -4,6 +4,16 @@ import breeze.linalg._
 import breeze.numerics._
 
 object Derivatives {
+  def fab(p: Double,
+    U: Double => Double,
+    V: Double => Double,
+    y1: Double => Double,
+    y2: Double => Double)(ab: DenseVector[Double]): Double = {
+      val a = ab(0)
+      val b = ab(1)
+      (y1(p) * (U(a) * y2(b) - V(b) * y2(a)) + y2(p) * (V(b) * y1(a) - U(a) * y1(b))) / (y1(a) * y2(b) - y2(a) * y1(b))
+    }
+
   private def gradientA(p: Double,
     U: Double => Double,
     V: Double => Double,
@@ -15,10 +25,7 @@ object Derivatives {
     y2N1: Double => Double)(ab: DenseVector[Double]): Double = {
       val a = ab(0)
       val b = ab(1)
-      println(s"y1(p1): ${y1(p)}, y2(b): ${y2(b)}, UN1(a): ${UN1(a)}, V(b): ${V(b)}, y1(p1): ${y2N1(a)}, y2(p): ${y2(p)}, V(b): ${V(b)}, y1N1(a): ${y1N1(a)}, y2(p): ${y2(p)}, y1(b): ${y1(b)}, y1(a): ${y1(a)}, y2(b): ${y2(b)}, y2(a): ${y2(a)}, y1(b): ${y1(b)}, y2(b): ${y2(b)}, y2N1(a): ${y2N1(a)}, y1(p): ${y1(p)}, U(a): ${U(a)}, y2(b): ${y2(b)}, y2(a): ${y2(a)}, : ${V(b)}, : ${y1(b)}")
-      val blah = (y1(p) * (y2(b) * UN1(a) - V(b) * y2N1(a)) + y2(p) * (V(b) * y1N1(a) - y1(b) * UN1(a))) / (y1(a) * y2(b) - y2(a) * y1(b)) - ((y2(b) * y1N1(a) - y1(b) * y2N1(a)) * (y1(p) * (U(a) * y2(b) - y2(a) * V(b)) + y2(p) * (y1(a) * V(b) - U(a) * y1(b)))) / (pow((y1(a) * y2(b) - y2(a) * y1(b)), 2))
-      println(s"blah: ${blah}")
-      blah
+      (y1(p) * (y2(b) * UN1(a) - V(b) * y2N1(a)) + y2(p) * (V(b) * y1N1(a) - y1(b) * UN1(a))) / (y1(a) * y2(b) - y2(a) * y1(b)) - ((y2(b) * y1N1(a) - y1(b) * y2N1(a)) * (y1(p) * (U(a) * y2(b) - y2(a) * V(b)) + y2(p) * (y1(a) * V(b) - U(a) * y1(b)))) / (pow((y1(a) * y2(b) - y2(a) * y1(b)), 2))
     }
 
   private def gradientB(p: Double,

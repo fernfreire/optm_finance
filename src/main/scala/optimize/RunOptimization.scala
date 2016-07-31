@@ -7,7 +7,7 @@ import java.io.File
 object RunOptimization extends App {
   val paths = Map(1 -> "/Users/fernandofreiredemedeiros/MSc/MAC5796/terminal/optm_finance/src/main/scala/optimize/prices.csv",
     2 -> "c:/Users/fernanda/desktop/fernando/MAC5796/project/optm_finance/src/main/scala/optimize/prices.csv")
-  val choose = 2
+  val choose = 1
   val path = paths(choose)
   val file = new File(path)
   println("Estimating...")
@@ -17,11 +17,11 @@ object RunOptimization extends App {
   val rkSolver = new RungeKuttaSolver[OrnsteinUhlenbeckODE](uoODE)
 
   // Parameters
-  val h = 0.001 //step
+  val h = 0.0005 //step
   val k1 = 1.0 //#stddevPrices +- for last price in initial ys
-  val k2 = 0.03 //#meanPrices +- for last price in initial xs
-  val k3 = 0.02 //disturbing initial point for optimization
-  val eps = 1.0
+  val k2 = 0.3 //#meanPrices +- for last price in initial xs
+  val k3 = 0.04 //disturbing initial point for optimization
+  val eps = 0.01
 
   def U(x: Double): Double = x
   def UN1(x: Double): Double = 1
@@ -35,7 +35,7 @@ object RunOptimization extends App {
   val stddevPrices = myEstimator.stddevPrices
   val meanPrice = myEstimator.meanPrice
 
-  val (initialY1, initialY2) = (DenseVector(p + (k1 * stddevPrices), -0.01), DenseVector(0.9 * p - (k1 * stddevPrices), 0.01))
+  val (initialY1, initialY2) = (DenseVector(p + (k1 * stddevPrices), 0.01), DenseVector(p - (k1 * stddevPrices), -0.01))
   val (initialX1, initialX2) = (p + (k2 * meanPrice), p - (k2 * meanPrice))
 
   def steps(h: Double, initialX: Double, finalX: Double): Int = ceil(abs(finalX - initialX) / h).toInt
@@ -44,10 +44,10 @@ object RunOptimization extends App {
   val (upperN1, upperN2) = (steps(h, initialX1, upperX), steps(h, initialX2, upperX))
   val (lowerN1, lowerN2) = (steps(h, lowerX, initialX1), steps(h, lowerX, initialX2))
 
-  println(upperN1)
-  println(upperN2)
-  println(lowerN1)
-  println(lowerN2)
+  println(s"Steps lower IVP 1: ${lowerN1}")
+  println(s"Steps upper IVP 1: ${upperN1}")
+  println(s"Steps lower IVP 2: ${lowerN2}")
+  println(s"Steps upper IVP 2: ${upperN2}")
 
   println("Created!")
   println("Solving dummy IVP 1")
@@ -57,21 +57,31 @@ object RunOptimization extends App {
 
 
   def y1(x: Double) = rkSolver.yNs(x, solutionIVP1, 0)
-  def y2(x: Double) = rkSolver.yNs(x, solutionIVP1, 0)
+  def y2(x: Double) = rkSolver.yNs(x, solutionIVP2, 0)
 
   def y1N1(x: Double) = rkSolver.yNs(x, solutionIVP1, 1)
-  def y2N1(x: Double) = rkSolver.yNs(x, solutionIVP1, 1)
+  def y2N1(x: Double) = rkSolver.yNs(x, solutionIVP2, 1)
 
   def y1N2(x: Double) = rkSolver.yNs(x, solutionIVP1, 2)
-  def y2N2(x: Double) = rkSolver.yNs(x, solutionIVP1, 2)
+  def y2N2(x: Double) = rkSolver.yNs(x, solutionIVP2, 2)
 
   def gradient(ab: DenseVector[Double]): DenseVector[Double] = Derivatives.gradient(p, U, V, UN1, VN1, y1, y2, y1N1, y2N1)(ab)
   def hessian(ab: DenseVector[Double]): DenseMatrix[Double] = Derivatives.hessian(p, U, V, UN1, VN1, UN2, VN2, y1, y2, y1N1, y2N1, y1N2, y2N2)(ab)
+  def f(ab: DenseVector[Double]): Double = Derivatives.fab(p, U, V, y1, y2)(ab)
 
   val start = DenseVector(p + (k3 * meanPrice), p - (k3 * meanPrice))
   println("Optimizing...")
-  val objective = NewtonMethod.findMin(-gradient(_), -hessian(_), start, eps)
+  val objective = NewtonMethod.findMin(-gradient(_), -hessian(_), start, eps, f(_))
   println(objective)
+  println(f(objective))
+
+  // val N = (lowerN1 + lowerN2)
+  // val range = linspace(lowerX, upperX, N / 2)
+
+  // val plane = range.map(i => range.map(j => (i, j))).reduce(DenseVector.vertcat(_,_)).map(i => DenseVector(i._1, i._2))
+  // println(plane)
+  // val fApplied = plane.map(i => (i, f(i)))
+  // fApplied.foreach(i => println(s"${i._1}\t${1._2}"))
 
 }
 

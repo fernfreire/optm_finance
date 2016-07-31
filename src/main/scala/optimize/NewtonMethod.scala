@@ -8,19 +8,20 @@ object NewtonMethod {
   def findMin(gradF: DenseVector[Double] => DenseVector[Double],
     H: DenseVector[Double] => DenseMatrix[Double],
     initialX: DenseVector[Double],
-    eps: Double): DenseVector[Double] = {
+    eps: Double,
+    f: DenseVector[Double] => Double): DenseVector[Double] = {
 
     @tailrec def lambda(gradF: DenseVector[Double] => DenseVector[Double],
       H: DenseVector[Double] => DenseMatrix[Double],
       currentX: DenseVector[Double],
       eps: Double,
-      d: DenseVector[Double],
-      ith: Int): DenseVector[Double] = {
-        if(norm(d) < eps || ith > 5)
+      d: DenseVector[Double]): DenseVector[Double] = {
+        println(s"|d| = ${norm(d)}, f(x) = ${f(currentX)}")
+        if(norm(d) < eps)
           currentX
         else
-          lambda(gradF, H, currentX + d, eps, -((inv(H(currentX))) * (gradF(currentX))), ith + 1)
+          lambda(gradF, H, currentX + d, eps, -((inv(H(currentX))) * (gradF(currentX))))
     }
-    lambda(gradF, H, initialX, eps, -((inv(H(initialX))) * (gradF(initialX))), 0)
+    lambda(gradF, H, initialX, eps, -((inv(H(initialX))) * (gradF(initialX))))
   }
 }
