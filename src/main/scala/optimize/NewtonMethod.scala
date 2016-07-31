@@ -14,15 +14,13 @@ object NewtonMethod {
       H: DenseVector[Double] => DenseMatrix[Double],
       currentX: DenseVector[Double],
       eps: Double,
-      d: DenseVector[Double]): DenseVector[Double] = {
-
-      if(norm(d) < eps)
-        currentX
-      else
-        lambda(gradF, H, currentX + d, eps, -((inv(H(currentX))) * (gradF(currentX))))
+      d: DenseVector[Double],
+      ith: Int): DenseVector[Double] = {
+        if(norm(d) < eps || ith > 5)
+          currentX
+        else
+          lambda(gradF, H, currentX + d, eps, -((inv(H(currentX))) * (gradF(currentX))), ith + 1)
     }
-
-    lambda(gradF, H, initialX, eps, -((inv(H(initialX))) * (gradF(initialX))))
-
+    lambda(gradF, H, initialX, eps, -((inv(H(initialX))) * (gradF(initialX))), 0)
   }
 }

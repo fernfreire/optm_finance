@@ -7,7 +7,79 @@ import java.io.File
 object RunOptimization extends App {
   val paths = Map(1 -> "/Users/fernandofreiredemedeiros/MSc/MAC5796/terminal/optm_finance/src/main/scala/optimize/prices.csv",
     2 -> "c:/Users/fernanda/desktop/fernando/MAC5796/project/optm_finance/src/main/scala/optimize/prices.csv")
-  val choose = 1
+  val choose = 2
+  val path = paths(choose)
+  val file = new File(path)
+  println("Estimating...")
+  val myEstimator = new OrnsteinUhlenbeckParametersEstimator(file, 1.0 / 252)
+  println("Done! Now creating rk solver.")
+  val uoODE = new OrnsteinUhlenbeckODE(myEstimator.theta, myEstimator.avg, myEstimator.vol, 0.1215)
+  val rkSolver = new RungeKuttaSolver[OrnsteinUhlenbeckODE](uoODE)
+
+  // Parameters
+  val h = 0.001 //step
+  val k1 = 1.0 //#stddevPrices +- for last price in initial ys
+  val k2 = 0.03 //#meanPrices +- for last price in initial xs
+  val k3 = 0.02 //disturbing initial point for optimization
+  val eps = 1.0
+
+  def U(x: Double): Double = x
+  def UN1(x: Double): Double = 1
+  def UN2(x: Double): Double = 0
+
+  def V(x: Double): Double = x
+  def VN1(x: Double): Double = 1
+  def VN2(x: Double): Double = 0
+
+  val p = myEstimator.lastPrice
+  val stddevPrices = myEstimator.stddevPrices
+  val meanPrice = myEstimator.meanPrice
+
+  val (initialY1, initialY2) = (DenseVector(p + (k1 * stddevPrices), -0.01), DenseVector(0.9 * p - (k1 * stddevPrices), 0.01))
+  val (initialX1, initialX2) = (p + (k2 * meanPrice), p - (k2 * meanPrice))
+
+  def steps(h: Double, initialX: Double, finalX: Double): Int = ceil(abs(finalX - initialX) / h).toInt
+
+  val (upperX, lowerX) = (myEstimator.upperX, myEstimator.lowerX)
+  val (upperN1, upperN2) = (steps(h, initialX1, upperX), steps(h, initialX2, upperX))
+  val (lowerN1, lowerN2) = (steps(h, lowerX, initialX1), steps(h, lowerX, initialX2))
+
+  println(upperN1)
+  println(upperN2)
+  println(lowerN1)
+  println(lowerN2)
+
+  println("Created!")
+  println("Solving dummy IVP 1")
+  val solutionIVP1 = rkSolver.solveIVP(initialX1, initialY1, lowerX, upperX, lowerN1, upperN1)
+  println("Solving dummy IVP 2")
+  val solutionIVP2 = rkSolver.solveIVP(initialX2, initialY2, lowerX, upperX, lowerN2, upperN2)
+
+
+  def y1(x: Double) = rkSolver.yNs(x, solutionIVP1, 0)
+  def y2(x: Double) = rkSolver.yNs(x, solutionIVP1, 0)
+
+  def y1N1(x: Double) = rkSolver.yNs(x, solutionIVP1, 1)
+  def y2N1(x: Double) = rkSolver.yNs(x, solutionIVP1, 1)
+
+  def y1N2(x: Double) = rkSolver.yNs(x, solutionIVP1, 2)
+  def y2N2(x: Double) = rkSolver.yNs(x, solutionIVP1, 2)
+
+  def gradient(ab: DenseVector[Double]): DenseVector[Double] = Derivatives.gradient(p, U, V, UN1, VN1, y1, y2, y1N1, y2N1)(ab)
+  def hessian(ab: DenseVector[Double]): DenseMatrix[Double] = Derivatives.hessian(p, U, V, UN1, VN1, UN2, VN2, y1, y2, y1N1, y2N1, y1N2, y2N2)(ab)
+
+  val start = DenseVector(p + (k3 * meanPrice), p - (k3 * meanPrice))
+  println("Optimizing...")
+  val objective = NewtonMethod.findMin(-gradient(_), -hessian(_), start, eps)
+  println(objective)
+
+}
+
+/*
+{
+  val paths = Map(1 -> "/Users/fernandofreiredemedeiros/MSc/MAC5796/terminal/optm_finance/src/main/scala/optimize/prices.csv",
+    2 -> "c:/Users/fernanda/desktop/fernando/MAC5796/project/optm_finance/src/main/scala/optimize/prices.csv")
+  val choose = 2
   val path = paths(choose)
   val file = new File(path)
   val myEstimator = new OrnsteinUhlenbeckParametersEstimator(file, 1.0 / 252)
@@ -49,3 +121,4 @@ object RunOptimization extends App {
   // val x = NewtonMethod.findMin(grad, thisH, DenseVector(0.3333, 0.3333), 1e-16)
   // println(x)
 }
+*/

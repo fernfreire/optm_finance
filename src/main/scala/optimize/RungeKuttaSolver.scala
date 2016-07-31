@@ -44,7 +44,7 @@ class RungeKuttaSolver[T <: ODE](ode: T) extends Interpolation {
           else
             solver(this.nextY(currentY, currentX, h, ode), currentX + h, h, currentStep + 1, steps, Map(currentX -> currentY) ++ map)
         }
-
+        println("RK solved!")
         solver(initialY, initialX, h, 0, N, Map(initialX -> initialY))
       } else
         Map[Double, DenseVector[Double]]()

@@ -46,4 +46,10 @@ class OrnsteinUhlenbeckParametersEstimator(inputFile: File, interval: Double) {
   private lazy val w = this.delta + this.y * this.averagePrice
   private lazy val z = this.newVector(this.prices, this.y, this.w).t * this.newVector(this.prices, this.y, this.w) / (this.pricesLen - 1 )
 
+  lazy val stddevPrices = stddev(prices)
+  lazy val meanPrice = mean(prices)
+  lazy val (upperX, lowerX) = (max(prices) + 2 * stddevPrices, max(min(prices) - 2 * stddevPrices, 0.0))
+
+  lazy val lastPrice = prices(-1)
+
 }
